@@ -1,0 +1,81 @@
+services:
+  postgres:
+    container_name: postgres_database
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ocauser
+      POSTGRES_PASSWORD: ocapassword
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - 5432:5432 # Maps the PostgreSQL default port
+    volumes:
+        - postgres:/var/lib/postgresql/data
+    networks:
+        - microservices-net
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: ms_pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - 5050:80
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo
+    container_name: mongo_db
+    ports:
+      - 27017:27017
+    networks:
+      - microservices-net
+    volumes:
+      - mongo:/data
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=ocaroot
+      - MONGO_INITDB_ROOT_PASSWORD=ocaroot
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo_express_ui
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_BASICAUTH_USERNAME=ocaroot
+      - ME_CONFIG_BASICAUTH_PASSWORD=ocaroot
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=ocaroot
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=ocaroot
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    depends_on:
+      - mongodb
+    networks:
+      - microservices-net
+
+  maildev:
+    image: maildev/maildev:latest
+    container_name: maildev
+    environment:
+      MAILDEV_INCOMING_USER: testuser     # Optional: Set SMTP user
+      MAILDEV_INCOMING_PASS: testpassword # Optional: Set SMTP password
+    ports:
+      - 1080:1080 # Web interface accessible at http://localhost:1080
+      - 1025:1025 # SMTP server listening on localhost:1025
+
+volumes:
+  postgres:
+  pgadmin:
+  mongo:
+
+networks:
+  microservices-net:
+    driver: bridge
+
+
